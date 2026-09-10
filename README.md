@@ -28,3 +28,17 @@ Run the focused test suite with `python3 -m unittest discover -s tests -v`.
 - Passwords use scrypt hashes and are never returned by the API.
 - Bearer sessions expire after 30 minutes of inactivity.
 - Shared entities: `Users`, `Students`, `Lecturers`, `ClassSessions`, `AttendanceRecord`.
+
+### Attendance and reports
+
+All attendance endpoints use the bearer token returned by login. A Lecturer creates sessions with `POST /api/sessions` using `course_name`, `start_time`, and `end_time` in ISO 8601 format. The server assigns `session_id` and an unpredictable `session_code`; `GET /api/sessions` lists only that lecturer's sessions.
+
+A Student submits attendance with `POST /api/attendance` and `{"session_code":"..."}`. The server resolves the student's profile, checks the session window, records the server timestamp, and accepts `Present`, `Late`, or `Absent` (default `Present`). A student can submit only once per session. `GET /api/attendance/history` returns only the authenticated student's records.
+
+`GET /api/reports/attendance` is restricted to Lecturers and returns attendance for their own sessions. Add `?session_id=...` to limit the report to one owned session. Unauthenticated requests return `401`; authenticated users with the wrong role return `403`.
+
+Run all tests with:
+
+```sh
+python3 -m unittest discover -s tests -v
+```
