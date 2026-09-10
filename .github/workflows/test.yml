@@ -1,0 +1,23 @@
+name: Run Python Tests
+
+on:
+  push:
+    branches: [ "feature/nhanhc-qa-testing", "main" ]
+  pull_request:
+    branches: [ "feature/nhanhc-qa-testing", "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Run Unittest
+      run: |
+        python -m unittest discover -s tests -v
