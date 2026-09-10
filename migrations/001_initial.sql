@@ -40,3 +40,6 @@ CREATE TABLE IF NOT EXISTS AttendanceRecord (
     FOREIGN KEY (student_code) REFERENCES Students(student_code),
     FOREIGN KEY (session_id) REFERENCES ClassSessions(session_id)
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_attendance_student_session
+    ON AttendanceRecord(student_code, session_id);

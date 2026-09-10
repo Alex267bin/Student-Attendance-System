@@ -4,6 +4,8 @@ import sqlite3
 import time
 import uuid
 from collections.abc import Callable
+from datetime import datetime, timezone
+from urllib.parse import parse_qs
 
 from .database import connect, initialize
 from .security import hash_password, verify_password
@@ -43,7 +45,7 @@ class AttendanceAPI:
 
     def _json(self, start_response: Callable, status: str, payload: dict, headers: list[tuple[str, str]] | None = None):
         body = json.dumps(payload).encode()
-        response_headers = [("Content-Type", "application/json"), ("Content-Length", str(len(body))), ("Access-Control-Allow-Origin", "*"), ("Access-Control-Allow-Headers", "Authorization, Content-Type")]
+        response_headers = [("Content-Type", "application/json"), ("Content-Length", str(len(body))), ("Access-Control-Allow-Origin", "*"), ("Access-Control-Allow-Headers", "Authorization, Content-Type"), ("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")]
         response_headers.extend(headers or [])
         start_response(status, response_headers)
         return [body]
@@ -72,7 +74,131 @@ class AttendanceAPI:
             if user["role"] != "Admin":
                 return self._json(start_response, "403 Forbidden", {"error": "Admin role required"})
             return self.users(method, path, self._body(environ), start_response)
+        if path == "/api/sessions" or path.startswith("/api/sessions/"):
+            return self.sessions_api(method, self._body(environ), user, start_response)
+        if path == "/api/attendance" or path == "/api/attendance/history":
+            return self.attendance_api(method, path, self._body(environ), user, start_response)
+        if path == "/api/reports/attendance":
+            return self.attendance_report(environ, user, start_response)
         return self._json(start_response, "404 Not Found", {"error": "Not found"})
+
+    def _require_role(self, user: sqlite3.Row | None, role: str, start_response: Callable):
+        if user is None:
+            return self._json(start_response, "401 Unauthorized", {"error": "Authentication required"})
+        if user["role"] != role:
+            return self._json(start_response, "403 Forbidden", {"error": f"{role} role required"})
+        return None
+
+    @staticmethod
+    def _parse_datetime(value: object) -> datetime | None:
+        if not isinstance(value, str):
+            return None
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+        if parsed.tzinfo is not None:
+            parsed = parsed.astimezone(timezone.utc).replace(tzinfo=None)
+        return parsed
+
+    @staticmethod
+    def _now() -> datetime:
+        return datetime.now(timezone.utc).replace(tzinfo=None)
+
+    @staticmethod
+    def _session_json(row: sqlite3.Row) -> dict[str, str]:
+        return {key: row[key] for key in ("session_id", "course_name", "lecturer_code", "start_time", "end_time", "session_code")}
+
+    def sessions_api(self, method: str, data: dict, user: sqlite3.Row | None, start_response: Callable):
+        denied = self._require_role(user, "Lecturer", start_response)
+        if denied:
+            return denied
+        lecturer = self.connection.execute("SELECT lecturer_code FROM Lecturers WHERE user_id = ?", (user["user_id"],)).fetchone()
+        if lecturer is None:
+            return self._json(start_response, "403 Forbidden", {"error": "Lecturer profile required"})
+        if method == "POST":
+            course_name = data.get("course_name")
+            start_time = self._parse_datetime(data.get("start_time"))
+            end_time = self._parse_datetime(data.get("end_time"))
+            if not isinstance(course_name, str) or not course_name.strip() or start_time is None or end_time is None or end_time <= start_time:
+                return self._json(start_response, "400 Bad Request", {"error": "course_name, valid start_time, and end_time are required; end_time must be later"})
+            if data.get("lecturer_code") not in (None, lecturer["lecturer_code"]):
+                return self._json(start_response, "403 Forbidden", {"error": "Cannot create a session for another lecturer"})
+            session_id = str(uuid.uuid4())
+            session_code = secrets.token_urlsafe(6).replace("-", "A").replace("_", "B")[:10]
+            try:
+                self.connection.execute("INSERT INTO ClassSessions VALUES (?, ?, ?, ?, ?, ?)", (session_id, course_name.strip(), lecturer["lecturer_code"], start_time.isoformat(), end_time.isoformat(), session_code))
+                self.connection.commit()
+            except sqlite3.IntegrityError:
+                self.connection.rollback()
+                return self._json(start_response, "409 Conflict", {"error": "Session could not be created"})
+            row = self.connection.execute("SELECT * FROM ClassSessions WHERE session_id = ?", (session_id,)).fetchone()
+            return self._json(start_response, "201 Created", {"session": self._session_json(row)})
+        if method == "GET":
+            rows = self.connection.execute("SELECT * FROM ClassSessions WHERE lecturer_code = ? ORDER BY start_time", (lecturer["lecturer_code"],)).fetchall()
+            return self._json(start_response, "200 OK", {"sessions": [self._session_json(row) for row in rows]})
+        return self._json(start_response, "405 Method Not Allowed", {"error": "Method not allowed"})
+
+    def attendance_api(self, method: str, path: str, data: dict, user: sqlite3.Row | None, start_response: Callable):
+        if path == "/api/attendance/history":
+            denied = self._require_role(user, "Student", start_response)
+            if denied:
+                return denied
+            if method != "GET":
+                return self._json(start_response, "405 Method Not Allowed", {"error": "Method not allowed"})
+            student = self.connection.execute("SELECT student_code FROM Students WHERE user_id = ?", (user["user_id"],)).fetchone()
+            if student is None:
+                return self._json(start_response, "403 Forbidden", {"error": "Student profile required"})
+            rows = self.connection.execute("SELECT a.record_id, a.student_code, a.session_id, s.course_name, s.lecturer_code, a.timestamp, a.status FROM AttendanceRecord a JOIN ClassSessions s ON s.session_id = a.session_id WHERE a.student_code = ? ORDER BY a.timestamp DESC", (student["student_code"],)).fetchall()
+            return self._json(start_response, "200 OK", {"attendance": [dict(row) for row in rows]})
+        denied = self._require_role(user, "Student", start_response)
+        if denied:
+            return denied
+        if method != "POST":
+            return self._json(start_response, "405 Method Not Allowed", {"error": "Method not allowed"})
+        student = self.connection.execute("SELECT student_code FROM Students WHERE user_id = ?", (user["user_id"],)).fetchone()
+        if student is None:
+            return self._json(start_response, "403 Forbidden", {"error": "Student profile required"})
+        session_code = data.get("session_code")
+        session = self.connection.execute("SELECT * FROM ClassSessions WHERE session_code = ?", (session_code,)).fetchone() if isinstance(session_code, str) else None
+        now = self._now()
+        if session is None:
+            return self._json(start_response, "404 Not Found", {"error": "Session not found"})
+        start_time = self._parse_datetime(session["start_time"])
+        end_time = self._parse_datetime(session["end_time"])
+        if start_time is None or end_time is None or not (start_time <= now <= end_time):
+            return self._json(start_response, "400 Bad Request", {"error": "Session is not active"})
+        if self.connection.execute("SELECT 1 FROM AttendanceRecord WHERE student_code = ? AND session_id = ?", (student["student_code"], session["session_id"])).fetchone():
+            return self._json(start_response, "409 Conflict", {"error": "Attendance already submitted"})
+        status = data.get("status", "Present")
+        if status not in {"Present", "Late", "Absent"}:
+            return self._json(start_response, "400 Bad Request", {"error": "status must be Present, Late, or Absent"})
+        record_id = str(uuid.uuid4())
+        try:
+            self.connection.execute("INSERT INTO AttendanceRecord VALUES (?, ?, ?, ?, ?)", (record_id, student["student_code"], session["session_id"], now.isoformat(), status))
+            self.connection.commit()
+        except sqlite3.IntegrityError:
+            self.connection.rollback()
+            return self._json(start_response, "409 Conflict", {"error": "Attendance already submitted"})
+        return self._json(start_response, "201 Created", {"attendance": {"record_id": record_id, "student_code": student["student_code"], "session_id": session["session_id"], "timestamp": now.isoformat(), "status": status}})
+
+    def attendance_report(self, environ: dict, user: sqlite3.Row | None, start_response: Callable):
+        denied = self._require_role(user, "Lecturer", start_response)
+        if denied:
+            return denied
+        lecturer = self.connection.execute("SELECT lecturer_code FROM Lecturers WHERE user_id = ?", (user["user_id"],)).fetchone()
+        if lecturer is None:
+            return self._json(start_response, "403 Forbidden", {"error": "Lecturer profile required"})
+        query = parse_qs(environ.get("QUERY_STRING", ""))
+        session_id = query.get("session_id", [None])[0]
+        sql = "SELECT s.session_id, s.course_name, s.lecturer_code, a.student_code, a.timestamp, a.status FROM ClassSessions s JOIN AttendanceRecord a ON a.session_id = s.session_id WHERE s.lecturer_code = ?"
+        parameters: tuple[str, ...] = (lecturer["lecturer_code"],)
+        if session_id:
+            sql += " AND s.session_id = ?"
+            parameters += (session_id,)
+        sql += " ORDER BY a.timestamp"
+        rows = self.connection.execute(sql, parameters).fetchall()
+        return self._json(start_response, "200 OK", {"attendance": [dict(row) for row in rows]})
 
     def login(self, data: dict, start_response: Callable):
         username, password = data.get("username"), data.get("password")

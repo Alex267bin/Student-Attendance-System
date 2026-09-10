@@ -2,6 +2,7 @@ import io
 import json
 import sqlite3
 import unittest
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 from backend.api import AttendanceAPI
@@ -172,6 +173,48 @@ class AttendanceAPITest(unittest.TestCase):
         self.assertEqual(status, 201)
         self.assertEqual(self.client.request("DELETE", f"/api/users/{created['user']['user_id']}", token=token)[0], 200)
         self.assertIsNone(self.api.connection.execute("SELECT 1 FROM Students WHERE student_code = 'ST05'").fetchone())
+
+    def test_attendance_session_flow_and_ownership(self):
+        _, lecturer_login = self.login("lecturer", "lecturer-pass")
+        _, student_login = self.login("student", "student-pass")
+        now = datetime.now(timezone.utc)
+        session_data = {
+            "course_name": "Distributed Systems",
+            "start_time": (now - timedelta(minutes=5)).isoformat(),
+            "end_time": (now + timedelta(minutes=5)).isoformat(),
+            "lecturer_code": "LE99",
+        }
+        self.assertEqual(self.client.request("POST", "/api/sessions", session_data)[0], 401)
+        self.assertEqual(self.client.request("POST", "/api/sessions", session_data, student_login["token"])[0], 403)
+        status, response = self.client.request("POST", "/api/sessions", session_data, lecturer_login["token"])
+        self.assertEqual(status, 403)
+        session_data["lecturer_code"] = "LE01"
+        status, response = self.client.request("POST", "/api/sessions", session_data, lecturer_login["token"])
+        self.assertEqual(status, 201)
+        session = response["session"]
+        self.assertTrue(session["session_id"])
+        self.assertTrue(session["session_code"])
+        self.assertEqual(self.client.request("POST", "/api/attendance", {"session_code": session["session_code"], "timestamp": "2000-01-01", "status": "Present"}, lecturer_login["token"])[0], 403)
+        status, attendance = self.client.request("POST", "/api/attendance", {"session_code": session["session_code"], "timestamp": "2000-01-01"}, student_login["token"])
+        self.assertEqual(status, 201)
+        self.assertEqual(attendance["attendance"]["student_code"], "ST01")
+        self.assertEqual(attendance["attendance"]["session_id"], session["session_id"])
+        self.assertNotEqual(attendance["attendance"]["timestamp"], "2000-01-01")
+        self.assertEqual(self.client.request("POST", "/api/attendance", {"session_code": session["session_code"]}, student_login["token"])[0], 409)
+        status, report = self.client.request("GET", "/api/reports/attendance", token=lecturer_login["token"])
+        self.assertEqual(status, 200)
+        self.assertEqual(report["attendance"][0]["student_code"], "ST01")
+        self.assertEqual(self.client.request("GET", "/api/attendance/history", token=student_login["token"])[1]["attendance"][0]["session_id"], session["session_id"])
+
+    def test_attendance_database_duplicate_constraint_and_expired_session(self):
+        now = datetime.now(timezone.utc)
+        self.api.connection.execute("INSERT INTO ClassSessions VALUES (?, ?, ?, ?, ?, ?)", ("expired", "Old Course", "LE01", (now - timedelta(hours=2)).isoformat(), (now - timedelta(hours=1)).isoformat(), "EXPIRED"))
+        self.api.connection.commit()
+        _, student_login = self.login("student", "student-pass")
+        self.assertEqual(self.client.request("POST", "/api/attendance", {"session_code": "EXPIRED"}, student_login["token"])[0], 400)
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.api.connection.execute("INSERT INTO AttendanceRecord VALUES (?, ?, ?, ?, ?)", ("one", "ST01", "expired", now.isoformat(), "Present"))
+            self.api.connection.execute("INSERT INTO AttendanceRecord VALUES (?, ?, ?, ?, ?)", ("two", "ST01", "expired", now.isoformat(), "Present"))
 
 
 if __name__ == "__main__":
