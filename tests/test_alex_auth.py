@@ -11,7 +11,7 @@ class TestAlexAuth(unittest.TestCase):
         return self.client.request("POST", "/api/auth/login", {"username": username, "password": password})
 
     def test_admin_login_success(self):
-        status, response = self.login("admin", "admin-pass")
+        status, response = self.login("admin", "adminpass")
         self.assertEqual(status, 200)
         self.assertIn("token", response)
 
@@ -20,8 +20,8 @@ class TestAlexAuth(unittest.TestCase):
         self.assertEqual(status, 401)
 
     def test_create_user_by_admin(self):
-        _, login_res = self.login("admin", "admin-pass")
-        token = login_res["token"]
+        _, login_res = self.login("admin", "adminpass")
+        token = login_res.get("token")
         user_data = {
             "username": "new_lecturer",
             "password": "pass123",
@@ -33,8 +33,8 @@ class TestAlexAuth(unittest.TestCase):
         self.assertEqual(status, 201)
 
     def test_create_user_forbidden_for_student(self):
-        _, login_res = self.login("student", "student-pass")
-        token = login_res["token"]
+        _, login_res = self.login("student", "studentpass")
+        token = login_res.get("token")
         user_data = {
             "username": "unauthorized_user",
             "password": "pass123",
