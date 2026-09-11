@@ -9,7 +9,7 @@ class TestKhoiAttendance(unittest.TestCase):
     def setUp(self):
         self.conn = connect(":memory:")
         initialize(self.conn)
-        self.api = AttendanceAPI(db_connection=self.conn)
+        self.api = AttendanceAPI(self.conn)
         self.client = APIClient(self.api)
 
     def tearDown(self):
@@ -53,7 +53,7 @@ class TestKhoiAttendance(unittest.TestCase):
         session_code = session_res.get("session_code") if isinstance(session_res, dict) else "DUMMY"
         _, stu_login = self.auto_login("student")
         self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_login.get("token"))
-        status, _ = self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_token.get("token") if 'stu_token' in locals() else stu_login.get("token"))
+        status, _ = self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_login.get("token"))
         self.assertTrue(status in [400, 409, 403, 401])
 
     def test_attendance_expired_session_rejected(self):
