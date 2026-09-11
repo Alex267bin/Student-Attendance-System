@@ -9,7 +9,7 @@ class TestNhanQAEdgeCases(unittest.TestCase):
     def setUp(self):
         self.conn = connect(":memory:")
         initialize(self.conn)
-        self.api = AttendanceAPI(db_connection=self.conn)
+        self.api = AttendanceAPI(self.conn)
         self.client = APIClient(self.api)
 
     def tearDown(self):
