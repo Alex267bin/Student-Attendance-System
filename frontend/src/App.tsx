@@ -40,6 +40,21 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<DashboardRouter />} />
+          <Route path="/admin" element={
+            <ProtectedRoute requiredRole="Admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/lecturer" element={
+            <ProtectedRoute requiredRole="Lecturer">
+              <LecturerDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/student" element={
+            <ProtectedRoute requiredRole="Student">
+              <StudentDashboard />
+            </ProtectedRoute>
+          } />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/unauthorized" element={
             <div style={{
