@@ -1,9 +1,8 @@
-
-# Python
+.git
+.venv
 __pycache__/
 *.py[cod]
-.venv/
-attendance.db
+*.db
 *.db-journal
 .env
 .env.*
