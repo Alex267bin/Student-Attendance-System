@@ -1,31 +1,42 @@
+import json
+import io
+from unittest.mock import MagicMock
+
 class APIClient:
     def __init__(self, api):
         self.api = api
     
     def request(self, method, endpoint, data=None, token=None):
         """
-        Make a request to the API.
-        Returns (status_code, response_dict)
+        Gọi API WSGI và trả về (status_code, response_dict)
         """
-        headers = {}
-        if token:
-            headers['Authorization'] = f'Bearer {token}'
+        if data is None:
+            data = {}
         
-        # Route the request to the appropriate API method based on endpoint
-        if method == "POST" and endpoint == "/api/auth/login":
-            return self.api.login(data.get("username"), data.get("password"))
+        # Chuẩn bị body
+        body = json.dumps(data).encode() if data else b'{}'
         
-        elif method == "POST" and endpoint == "/api/users":
-            return self.api.create_user(data, token)
+        # Tạo environ dict
+        environ = {
+            "REQUEST_METHOD": method,
+            "PATH_INFO": endpoint,
+            "CONTENT_LENGTH": str(len(body)),
+            "wsgi.input": io.BytesIO(body),
+            "HTTP_AUTHORIZATION": f"Bearer {token}" if token else "",
+            "QUERY_STRING": ""
+        }
         
-        elif method == "POST" and endpoint == "/api/sessions":
-            return self.api.create_session(data, token)
+        # Lưu response status
+        response_data = {"status": None}
         
-        elif method == "POST" and endpoint == "/api/attendance":
-            return self.api.mark_attendance(data, token)
+        def start_response(status, headers):
+            response_data["status"] = int(status.split()[0])
         
-        elif method == "GET" and endpoint == "/api/reports/attendance":
-            return self.api.get_attendance_report(token)
+        # Gọi API
+        result = self.api(environ, start_response)
         
-        # Default response if endpoint not found
-        return (404, {"error": "Endpoint not found"})
+        # Parse kết quả
+        body_bytes = b''.join(result)
+        response_body = json.loads(body_bytes) if body_bytes else {}
+        
+        return response_data["status"], response_body
