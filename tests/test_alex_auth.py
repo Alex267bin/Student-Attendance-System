@@ -1,13 +1,14 @@
 import unittest
 from backend.api import AttendanceAPI
 from backend.database import connect, initialize
-from tests.test_api import APIClient
+from tests.test_api import APIClient, setup_default_users
 
 class TestAlexAuth(unittest.TestCase):
     def setUp(self):
         self.conn = connect(":memory:")
         initialize(self.conn)
         self.api = AttendanceAPI(self.conn)
+        setup_default_users(self.api)
         self.client = APIClient(self.api)
 
     def tearDown(self):
@@ -25,8 +26,11 @@ class TestAlexAuth(unittest.TestCase):
         new_user = {
             "username": "new_student_01",
             "password": "password123",
-            "role": "student",
-            "full_name": "New Student"
+            "role": "Student",
+            "full_name": "New Student",
+            "email": "newstudent@example.com",
+            "student_code": "ST02",
+            "class_id": "C01"
         }
         status, _ = self.client.request("POST", "/api/users", new_user, token=token)
         self.assertTrue(status in [200, 201])
@@ -38,7 +42,7 @@ class TestAlexAuth(unittest.TestCase):
         new_user = {
             "username": "hacker",
             "password": "123",
-            "role": "admin",
+            "role": "Admin",
             "full_name": "Hacker"
         }
         status, _ = self.client.request("POST", "/api/users", new_user, token=token)

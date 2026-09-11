@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from backend.api import AttendanceAPI
 from backend.database import connect, initialize
-from tests.test_api import APIClient
+from tests.test_api import APIClient, setup_default_users
 
 class TestKhoiAttendance(unittest.TestCase):
 
@@ -10,6 +10,7 @@ class TestKhoiAttendance(unittest.TestCase):
         self.conn = connect(":memory:")
         initialize(self.conn)
         self.api = AttendanceAPI(self.conn)
+        setup_default_users(self.api)
         self.client = APIClient(self.api)
 
     def tearDown(self):
@@ -27,7 +28,6 @@ class TestKhoiAttendance(unittest.TestCase):
         _, lec_login = self.auto_login("lecturer")
         now = datetime.now(timezone.utc)
         
-        # Cập nhật payload đơn giản, chuẩn định dạng
         session_data = {
             "course_name": "Software Architecture",
             "course_code": "SA101",

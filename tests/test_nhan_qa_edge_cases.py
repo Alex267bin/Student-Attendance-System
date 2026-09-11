@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from backend.api import AttendanceAPI
 from backend.database import connect, initialize
-from tests.test_api import APIClient
+from tests.test_api import APIClient, setup_default_users
 
 class TestNhanQAEdgeCases(unittest.TestCase):
 
@@ -10,6 +10,7 @@ class TestNhanQAEdgeCases(unittest.TestCase):
         self.conn = connect(":memory:")
         initialize(self.conn)
         self.api = AttendanceAPI(self.conn)
+        setup_default_users(self.api)
         self.client = APIClient(self.api)
 
     def tearDown(self):
