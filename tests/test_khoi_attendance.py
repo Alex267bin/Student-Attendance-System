@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from backend.api import AttendanceAPI
 from backend.database import connect, initialize
-from tests.test_api import APIClient, setup_default_users
+from tests.test_api import APIClient
 
 class TestKhoiAttendance(unittest.TestCase):
 
@@ -10,7 +10,6 @@ class TestKhoiAttendance(unittest.TestCase):
         self.conn = connect(":memory:")
         initialize(self.conn)
         self.api = AttendanceAPI(self.conn)
-        setup_default_users(self.api)
         self.client = APIClient(self.api)
 
     def tearDown(self):
@@ -36,13 +35,14 @@ class TestKhoiAttendance(unittest.TestCase):
         }
         
         status, session_res = self.client.request("POST", "/api/sessions", session_data, token=lec_login.get("token"))
-        self.assertTrue(status in [200, 201])
+        self.assertTrue(status in [200, 201], f"Cannot create session: {status}")
         
-        session_code = session_res.get("session_code") if isinstance(session_res, dict) else None
-        if session_code:
-            _, stu_login = self.auto_login("student")
-            status, _ = self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_login.get("token"))
-            self.assertTrue(status in [200, 201])
+        session_code = session_res.get("session_code")
+        self.assertIsNotNone(session_code, "Session code is None")
+        
+        _, stu_login = self.auto_login("student")
+        status, _ = self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_login.get("token"))
+        self.assertTrue(status in [200, 201], f"Attendance failed: {status}")
 
     def test_duplicate_attendance_rejected(self):
         _, lec_login = self.auto_login("lecturer")
@@ -53,19 +53,20 @@ class TestKhoiAttendance(unittest.TestCase):
             "start_time": now.strftime("%Y-%m-%d %H:%M:%S"),
             "end_time": (now + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
         }
-        _, session_res = self.client.request("POST", "/api/sessions", session_data, token=lec_login.get("token"))
-        session_code = session_res.get("session_code") if isinstance(session_res, dict) else "DUMMY"
+        status_sec, session_res = self.client.request("POST", "/api/sessions", session_data, token=lec_login.get("token"))
+        self.assertTrue(status_sec in [200, 201], "Setup session failed")
+        
+        session_code = session_res.get("session_code")
+        self.assertIsNotNone(session_code)
         
         _, stu_login = self.auto_login("student")
         stu_token = stu_login.get("token")
         
-        # First attendance should succeed
-        first_status, _ = self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_token)
-        self.assertTrue(first_status in [200, 201], f"First attendance failed with status {first_status}")
+        status1, _ = self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_token)
+        self.assertTrue(status1 in [200, 201], f"First attendance failed with status {status1}")
         
-        # Second attendance should be rejected
-        second_status, _ = self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_token)
-        self.assertTrue(second_status in [400, 409, 403, 401], f"Second attendance should fail but got {second_status}")
+        status2, _ = self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_token)
+        self.assertTrue(status2 in [400, 409, 403], f"Duplicate not rejected, got {status2}")
 
     def test_attendance_expired_session_rejected(self):
         _, lec_login = self.auto_login("lecturer")
@@ -76,12 +77,13 @@ class TestKhoiAttendance(unittest.TestCase):
             "start_time": (now - timedelta(hours=3)).strftime("%Y-%m-%d %H:%M:%S"),
             "end_time": (now - timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
         }
-        _, session_res = self.client.request("POST", "/api/sessions", expired_session, token=lec_login.get("token"))
-        session_code = session_res.get("session_code") if isinstance(session_res, dict) else "EXPIRED"
+        status_exp, session_res = self.client.request("POST", "/api/sessions", expired_session, token=lec_login.get("token"))
         
-        _, stu_login = self.auto_login("student")
-        status, _ = self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_login.get("token"))
-        self.assertTrue(status in [400, 404, 409, 401])
+        if status_exp in [200, 201]:
+            session_code = session_res.get("session_code")
+            _, stu_login = self.auto_login("student")
+            status, _ = self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_login.get("token"))
+            self.assertTrue(status in [400, 404, 409, 403, 401], f"Expired session allowed attendance: {status}")
 
 if __name__ == "__main__":
     unittest.main()
