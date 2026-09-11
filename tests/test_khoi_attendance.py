@@ -59,9 +59,13 @@ class TestKhoiAttendance(unittest.TestCase):
         _, stu_login = self.auto_login("student")
         stu_token = stu_login.get("token")
         
-        self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_token)
-        status, _ = self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_token)
-        self.assertTrue(status in [400, 409, 403, 401])
+        # First attendance should succeed
+        first_status, _ = self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_token)
+        self.assertTrue(first_status in [200, 201], f"First attendance failed with status {first_status}")
+        
+        # Second attendance should be rejected
+        second_status, _ = self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_token)
+        self.assertTrue(second_status in [400, 409, 403, 401], f"Second attendance should fail but got {second_status}")
 
     def test_attendance_expired_session_rejected(self):
         _, lec_login = self.auto_login("lecturer")
