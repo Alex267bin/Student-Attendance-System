@@ -1,20 +1,31 @@
-# tests/test_api.py - dòng 37-50
-
-def setUp(self):
-    self.api = AttendanceAPI()
-    self.client = APIClient(self.api)
-    self.api.connection.execute(
-        "INSERT INTO Users VALUES (?, ?, ?, ?, ?, ?)",
-        ("admin-id", "admin", hash_password("admin123"), "System Admin", "admin@example.com", "Admin"),  # ← Thay "admin-pass" → "admin123"
-    )
-    self.api.connection.execute(
-        "INSERT INTO Users VALUES (?, ?, ?, ?, ?, ?)",
-        ("student-id", "student", hash_password("student123"), "A Student", "student@example.com", "Student"),  # ← Thay "student-pass" → "student123"
-    )
-    self.api.connection.execute("INSERT INTO Students VALUES (?, ?, ?)", ("ST01", "student-id", "C01"))
-    self.api.connection.execute(
-        "INSERT INTO Users VALUES (?, ?, ?, ?, ?, ?)",
-        ("lecturer-id", "lecturer", hash_password("lecturer123"), "A Lecturer", "lecturer@example.com", "Lecturer"),  # ← Thay "lecturer-pass" → "lecturer123"
-    )
-    self.api.connection.execute("INSERT INTO Lecturers VALUES (?, ?, ?)", ("LE01", "lecturer-id", "Computer Science"))
-    self.api.connection.commit()
+class APIClient:
+    def __init__(self, api):
+        self.api = api
+    
+    def request(self, method, endpoint, data=None, token=None):
+        """
+        Make a request to the API.
+        Returns (status_code, response_dict)
+        """
+        headers = {}
+        if token:
+            headers['Authorization'] = f'Bearer {token}'
+        
+        # Route the request to the appropriate API method based on endpoint
+        if method == "POST" and endpoint == "/api/auth/login":
+            return self.api.login(data.get("username"), data.get("password"))
+        
+        elif method == "POST" and endpoint == "/api/users":
+            return self.api.create_user(data, token)
+        
+        elif method == "POST" and endpoint == "/api/sessions":
+            return self.api.create_session(data, token)
+        
+        elif method == "POST" and endpoint == "/api/attendance":
+            return self.api.mark_attendance(data, token)
+        
+        elif method == "GET" and endpoint == "/api/reports/attendance":
+            return self.api.get_attendance_report(token)
+        
+        # Default response if endpoint not found
+        return (404, {"error": "Endpoint not found"})
