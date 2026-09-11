@@ -26,14 +26,18 @@ class TestKhoiAttendance(unittest.TestCase):
     def test_create_session_and_attendance_flow(self):
         _, lec_login = self.auto_login("lecturer")
         now = datetime.now(timezone.utc)
+        
+        # Cập nhật payload đơn giản, chuẩn định dạng
         session_data = {
             "course_name": "Software Architecture",
-            "start_time": now.isoformat(),
-            "end_time": (now + timedelta(hours=2)).isoformat(),
-            "lecturer_code": "LEC01"
+            "course_code": "SA101",
+            "start_time": now.strftime("%Y-%m-%d %H:%M:%S"),
+            "end_time": (now + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
         }
+        
         status, session_res = self.client.request("POST", "/api/sessions", session_data, token=lec_login.get("token"))
         self.assertTrue(status in [200, 201])
+        
         session_code = session_res.get("session_code") if isinstance(session_res, dict) else None
         if session_code:
             _, stu_login = self.auto_login("student")
@@ -45,15 +49,18 @@ class TestKhoiAttendance(unittest.TestCase):
         now = datetime.now(timezone.utc)
         session_data = {
             "course_name": "Database Testing",
-            "start_time": now.isoformat(),
-            "end_time": (now + timedelta(hours=2)).isoformat(),
-            "lecturer_code": "LEC01"
+            "course_code": "DB101",
+            "start_time": now.strftime("%Y-%m-%d %H:%M:%S"),
+            "end_time": (now + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
         }
         _, session_res = self.client.request("POST", "/api/sessions", session_data, token=lec_login.get("token"))
         session_code = session_res.get("session_code") if isinstance(session_res, dict) else "DUMMY"
+        
         _, stu_login = self.auto_login("student")
-        self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_login.get("token"))
-        status, _ = self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_login.get("token"))
+        stu_token = stu_login.get("token")
+        
+        self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_token)
+        status, _ = self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_token)
         self.assertTrue(status in [400, 409, 403, 401])
 
     def test_attendance_expired_session_rejected(self):
@@ -61,12 +68,13 @@ class TestKhoiAttendance(unittest.TestCase):
         now = datetime.now(timezone.utc)
         expired_session = {
             "course_name": "Expired Class",
-            "start_time": (now - timedelta(hours=3)).isoformat(),
-            "end_time": (now - timedelta(hours=1)).isoformat(),
-            "lecturer_code": "LEC01"
+            "course_code": "EX101",
+            "start_time": (now - timedelta(hours=3)).strftime("%Y-%m-%d %H:%M:%S"),
+            "end_time": (now - timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
         }
         _, session_res = self.client.request("POST", "/api/sessions", expired_session, token=lec_login.get("token"))
         session_code = session_res.get("session_code") if isinstance(session_res, dict) else "EXPIRED"
+        
         _, stu_login = self.auto_login("student")
         status, _ = self.client.request("POST", "/api/attendance", {"session_code": session_code}, token=stu_login.get("token"))
         self.assertTrue(status in [400, 404, 409, 401])
