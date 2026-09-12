@@ -111,14 +111,21 @@ export function LecturerDashboard() {
     return 'Active'
   }
 
+  const selectedSessionData = sessions.find((session) => session.session_id === selectedSession)
+  const presentCount = attendance.filter((record) => record.status === 'Present').length
+  const lateCount = attendance.filter((record) => record.status === 'Late').length
+
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <h1>Lecturer Attendance Dashboard</h1>
+        <div className={styles.brand}>
+          <div className={styles.logo}>U</div>
+          <div><strong>UTH University Faculty</strong><span>Computer Science Department</span></div>
+        </div>
         <div className={styles.userInfo}>
-          <span>{user?.full_name}</span>
+          <div className={styles.identity}><strong>{user?.full_name}</strong><span>Lecturer</span></div>
           <button onClick={logout} className={styles.logoutBtn}>
-            Logout
+            Log out
           </button>
         </div>
       </header>
@@ -132,12 +139,12 @@ export function LecturerDashboard() {
 
         <div className={styles.card}>
           <div className={styles.cardHeader}>
-            <h2>Sessions</h2>
+            <div><h2>Session Control</h2><p>Deploy a code for real-time attendance tracking.</p></div>
             <button
               onClick={() => setShowCreateForm(!showCreateForm)}
               className={styles.createBtn}
             >
-              {showCreateForm ? 'Cancel' : 'Create Session'}
+              {showCreateForm ? 'Cancel' : 'New Session'}
             </button>
           </div>
 
@@ -228,11 +235,24 @@ export function LecturerDashboard() {
               ))}
             </div>
           )}
+          {selectedSessionData && (
+            <div className={styles.sessionPreview}>
+              <span>ACTIVE ATTENDANCE CODE</span>
+              <strong>{selectedSessionData.session_code}</strong>
+              <div className={styles.qrUnavailable}>QR code unavailable<br /><small>The current service provides code entry only.</small></div>
+            </div>
+          )}
         </div>
 
         {selectedSession && (
           <div className={styles.card}>
-            <h2>Attendance for Selected Session</h2>
+            <div className={styles.cardHeader}><div><h2>Real-time Check-In Stream</h2><p>Roster updates available when this session report is refreshed.</p></div></div>
+            <div className={styles.stats}>
+              <div><strong>{attendance.length}</strong><span>Total Check-ins</span></div>
+              <div><strong>{presentCount}</strong><span>Present</span></div>
+              <div><strong>{lateCount}</strong><span>Late</span></div>
+              <div><strong>—</strong><span>Outstanding</span></div>
+            </div>
             {attendanceLoading ? (
               <div className={styles.loading}>Loading attendance...</div>
             ) : attendance.length === 0 ? (

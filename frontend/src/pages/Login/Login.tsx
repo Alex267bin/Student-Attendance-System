@@ -34,23 +34,34 @@ export function LoginPage() {
   return (
     <div className={styles.container}>
       <div className={styles.formWrapper}>
+        <div className={styles.logo}>U</div>
         <div className={styles.header}>
           <h1>Student Attendance System</h1>
-          <p>Sign In</p>
+          <p>Please sign in to access your portal</p>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
+          {error && <div className={styles.error}><span aria-hidden="true">!</span>{error}</div>}
           <div className={styles.roleSelector}>
-            <label>I am a:</label>
-            <select value={role} onChange={(e) => setRole(e.target.value as Role)}>
-              <option value="Student">Student</option>
-              <option value="Lecturer">Lecturer</option>
-              <option value="Admin">Administrator</option>
-            </select>
+            <label>Sign In As</label>
+            <div className={styles.roleTabs} role="tablist" aria-label="Sign in role">
+              {(['Student', 'Lecturer', 'Admin'] as Role[]).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className={role === option ? styles.activeRole : ''}
+                  onClick={() => setRole(option)}
+                  role="tab"
+                  aria-selected={role === option}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="username">Username or Email</label>
+            <label htmlFor="username">Username or Academic Email</label>
             <input
               id="username"
               type="text"
@@ -80,25 +91,23 @@ export function LoginPage() {
                 className={styles.togglePassword}
                 disabled={loading}
               >
-                {showPassword ? '🙈' : '👁️'}
+                {showPassword ? 'Hide' : 'Show'}
               </button>
             </div>
           </div>
 
-          <div className={styles.rememberMe}>
-            <input type="checkbox" id="remember" />
-            <label htmlFor="remember">Remember me</label>
+          <div className={styles.formOptions}>
+            <label className={styles.rememberMe} htmlFor="remember">
+              <input type="checkbox" id="remember" />
+              <span>Remember me</span>
+            </label>
+            <button type="button" className={styles.forgotPassword}>Forgot Password?</button>
           </div>
-
-          {error && <div className={styles.error}>{error}</div>}
 
           <button type="submit" className={styles.submitBtn} disabled={loading}>
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
 
-          <div className={styles.helpText}>
-            <p>Password recovery is not available yet. Please contact your administrator.</p>
-          </div>
         </form>
       </div>
     </div>

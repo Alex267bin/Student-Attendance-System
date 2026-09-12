@@ -7,6 +7,7 @@ interface User {
   full_name: string
   email: string
   role: 'Student' | 'Lecturer' | 'Admin'
+  student_code?: string
 }
 
 interface AuthContextType {

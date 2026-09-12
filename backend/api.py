@@ -29,6 +29,14 @@ class AttendanceAPI:
     def _public_user(user: sqlite3.Row) -> dict[str, str]:
         return {key: user[key] for key in ("user_id", "username", "full_name", "email", "role")}
 
+    def _public_user_with_profile(self, user: sqlite3.Row) -> dict[str, str]:
+        public_user = self._public_user(user)
+        if user["role"] == "Student":
+            student = self.connection.execute("SELECT student_code FROM Students WHERE user_id = ?", (user["user_id"],)).fetchone()
+            if student is not None:
+                public_user["student_code"] = student["student_code"]
+        return public_user
+
     def _session_user(self, environ: dict) -> sqlite3.Row | None:
         header = environ.get("HTTP_AUTHORIZATION", "")
         if not header.startswith("Bearer "):
@@ -68,7 +76,7 @@ class AttendanceAPI:
             return self.login(self._body(environ), start_response)
         user = self._session_user(environ)
         if method == "GET" and path == "/api/auth/me":
-            return self._json(start_response, "200 OK", {"authenticated": bool(user), "user": self._public_user(user) if user else None})
+            return self._json(start_response, "200 OK", {"authenticated": bool(user), "user": self._public_user_with_profile(user) if user else None})
         if path == "/api/users" or path.startswith("/api/users/"):
             if user is None:
                 return self._json(start_response, "401 Unauthorized", {"error": "Authentication required"})
@@ -208,7 +216,7 @@ class AttendanceAPI:
             return self._json(start_response, "401 Unauthorized", {"error": "Invalid username or password"})
         token = secrets.token_urlsafe(32)
         self.sessions[token] = (user["user_id"], time.monotonic())
-        public = self._public_user(user)
+        public = self._public_user_with_profile(user)
         return self._json(start_response, "200 OK", {"authenticated": True, "token": token, "user": public})
 
     def users(self, method: str, path: str, data: dict, start_response: Callable):

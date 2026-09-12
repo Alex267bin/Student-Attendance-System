@@ -3,7 +3,7 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f4f6fb;
   padding: 20px;
 }
 
@@ -12,57 +12,84 @@
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   width: 100%;
-  max-width: 400px;
-  padding: 40px;
+  max-width: 460px;
+  padding: 42px 48px 46px;
+  border: 1px solid #e5e8f0;
+}
+
+.logo {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 18px;
+  display: grid;
+  place-items: center;
+  background: #5b4bc4;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 24px;
+  font-weight: 800;
 }
 
 .header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 28px;
 }
 
 .header h1 {
   font-size: 24px;
-  color: #333;
-  margin-bottom: 8px;
+  color: #17213d;
+  margin-bottom: 9px;
+  font-size: 23px;
+  font-weight: 750;
 }
 
 .header p {
-  font-size: 16px;
-  color: #666;
+  font-size: 14px;
+  color: #71809a;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 .roleSelector {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
 }
 
 .roleSelector label {
-  font-weight: 500;
-  color: #333;
+  font-weight: 650;
+  color: #27324e;
+  font-size: 13px;
 }
 
-.roleSelector select {
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  background-color: white;
-  cursor: pointer;
-  transition: border-color 0.2s;
+.roleTabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  background: #f0f2f7;
+  border: 1px solid #e2e5ee;
+  border-radius: 8px;
 }
 
-.roleSelector select:hover,
-.roleSelector select:focus {
-  border-color: #667eea;
-  outline: none;
+.roleTabs button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 6px;
+  color: #65708a;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.roleTabs button.activeRole {
+  color: #5542bf;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(39, 32, 84, .1);
 }
 
 .formGroup {
@@ -73,20 +100,20 @@
 
 .formGroup label {
   font-weight: 500;
-  color: #333;
+  color: #27324e;
   font-size: 14px;
 }
 
 .formGroup input {
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 11px 13px;
+  border: 1px solid #dbe0ea;
+  border-radius: 6px;
   font-size: 14px;
   transition: border-color 0.2s;
 }
 
 .formGroup input:focus {
-  border-color: #667eea;
+  border-color: #6a58d3;
   outline: none;
 }
 
@@ -110,8 +137,9 @@
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 18px;
-  padding: 4px;
+  color: #7a8499;
+  font-size: 11px;
+  padding: 7px;
   position: absolute;
   right: 8px;
 }
@@ -121,32 +149,62 @@
   opacity: 0.5;
 }
 
+.formOptions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
 .rememberMe {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  color: #59657c;
 }
 
 .rememberMe input {
   cursor: pointer;
+  accent-color: #5b4bc4;
+}
+
+.forgotPassword {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #5b4bc4;
+  font-size: 13px;
 }
 
 .error {
-  padding: 10px 12px;
-  background-color: #fee;
-  color: #c33;
-  border: 1px solid #fcc;
-  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 12px;
+  background-color: #fff4f3;
+  color: #b64b4b;
+  border: 1px solid #f0b8b5;
+  border-radius: 6px;
   font-size: 14px;
+}
+
+.error span {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .submitBtn {
   padding: 12px;
-  background-color: #667eea;
+  background-color: #5b4bc4;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
@@ -154,7 +212,7 @@
 }
 
 .submitBtn:hover:not(:disabled) {
-  background-color: #5568d3;
+  background-color: #4939aa;
 }
 
 .submitBtn:disabled {
@@ -162,20 +220,9 @@
   cursor: not-allowed;
 }
 
-.helpText {
-  text-align: center;
-  font-size: 12px;
-  color: #999;
-  margin-top: 10px;
-}
-
-.helpText p {
-  margin: 0;
-}
-
 @media (max-width: 600px) {
   .formWrapper {
-    padding: 30px 20px;
+    padding: 32px 22px;
   }
 
   .header h1 {

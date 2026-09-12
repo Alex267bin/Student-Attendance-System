@@ -142,11 +142,14 @@ export function AdminDashboard() {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <h1>Admin Dashboard</h1>
+        <div className={styles.brand}>
+          <div className={styles.logo}>U</div>
+          <div><strong>UTH University Admin</strong><span>Master Registry &amp; Portal</span></div>
+        </div>
         <div className={styles.userInfo}>
-          <span>{user?.full_name}</span>
+          <div className={styles.identity}><strong>{user?.full_name}</strong><span>Administrator</span></div>
           <button onClick={logout} className={styles.logoutBtn}>
-            Logout
+            Log out
           </button>
         </div>
       </header>
@@ -157,6 +160,17 @@ export function AdminDashboard() {
             {message.text}
           </div>
         )}
+
+        <section className={styles.summaryGrid} aria-label="System summary">
+          <div className={styles.summaryCard}><span className={styles.summaryIcon}>S</span><div><strong>{users.filter((u) => u.role === 'Student').length || '—'}</strong><span>Total Active Students</span><small>From user registry</small></div></div>
+          <div className={styles.summaryCard}><span className={styles.summaryIcon}>L</span><div><strong>{users.filter((u) => u.role === 'Lecturer').length || '—'}</strong><span>Active Lecturers</span><small>From user registry</small></div></div>
+          <div className={styles.summaryCard}><span className={styles.summaryIcon}>A</span><div><strong>—</strong><span>Active Live Sessions</span><small>Not available to admin</small></div></div>
+        </section>
+
+        <section className={styles.dashboardGrid}>
+          <div className={styles.card}><h2>Department Attendance Rates</h2><p className={styles.sectionSubtitle}>Average attendance rates for the current week.</p><div className={styles.unavailable}>Attendance summaries are not provided by the current admin API.</div></div>
+          <div className={styles.card}><h2>System Log &amp; Activity</h2><p className={styles.sectionSubtitle}>Recent system events.</p><div className={styles.unavailable}>Activity history is not available from the current API.</div></div>
+        </section>
 
         <div className={styles.card}>
           <div className={styles.cardHeader}>
