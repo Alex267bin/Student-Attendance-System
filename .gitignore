@@ -1,0 +1,12 @@
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+attendance.db
+*.db-journal
+.env
+.env.*
+!.env.example
+frontend/node_modules/
+frontend/dist/
