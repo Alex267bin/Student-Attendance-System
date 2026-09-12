@@ -1,4 +1,5 @@
 import json
+import os
 import secrets
 import sqlite3
 import time
@@ -316,6 +317,7 @@ def create_app(database: str = ":memory:") -> AttendanceAPI:
 if __name__ == "__main__":
     from wsgiref.simple_server import make_server
 
-    with make_server("127.0.0.1", 8000, create_app("attendance.db")) as server:
+    database_path = os.environ.get("DATABASE_PATH", "attendance.db")
+    with make_server("0.0.0.0", 8000, create_app(database_path)) as server:
         print("Attendance API listening on http://127.0.0.1:8000")
         server.serve_forever()
