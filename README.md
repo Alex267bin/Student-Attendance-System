@@ -1,5 +1,40 @@
 # Student Attendance System
 
+## Docker Compose
+
+The repository's implemented database layer uses SQLite (`sqlite3`) and the
+existing migration file is SQLite SQL. Docker Compose therefore runs the
+complete system with the same architecture rather than introducing an
+unsupported PostgreSQL adapter:
+
+```text
+Browser -> frontend (Nginx, localhost:5173)
+			 -> backend (Python API, localhost:8000)
+			 -> SQLite database volume (attendance_data)
+```
+
+Copy `.env.example` to `.env` if you need to change the published ports, then
+start the system from the repository root:
+
+```sh
+docker compose build
+docker compose up -d
+docker compose ps
+```
+
+Open <http://localhost:5173>. The frontend proxies `/api` requests to the
+`backend` Compose service; the backend uses `DATABASE_PATH=/app/data/attendance.db`
+and persists it in the named `attendance_data` volume. Stop the services with:
+
+```sh
+docker compose down
+```
+
+PostgreSQL is not included in this Compose file because the application does
+not currently support PostgreSQL. Adding a PostgreSQL container without first
+porting `backend/database.py`, the API's SQLite transaction types, and the
+SQLite migration would not be a working integration.
+
 ## Backend
 
 The shared backend uses SQLite and Python's standard library. Initialize a persistent database with:
