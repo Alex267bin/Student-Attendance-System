@@ -1,5 +1,6 @@
 // API client for centralized requests
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api'
 
 interface RequestOptions {
   method?: string
@@ -63,70 +64,70 @@ class APIClient {
 
   // Auth endpoints
   async login(username: string, password: string) {
-    return this.request<any>('/api/auth/login', {
+    return this.request<any>('/auth/login', {
       method: 'POST',
       body: { username, password },
     })
   }
 
   async getMe() {
-    return this.request<any>('/api/auth/me')
+    return this.request<any>('/auth/me')
   }
 
   // User endpoints
   async getUsers() {
-    return this.request<any>('/api/users')
+    return this.request<any>('/users')
   }
 
   async createUser(data: Record<string, string>) {
-    return this.request<any>('/api/users', {
+    return this.request<any>('/users', {
       method: 'POST',
       body: data,
     })
   }
 
   async updateUser(userId: string, data: Record<string, string>) {
-    return this.request<any>(`/api/users/${userId}`, {
+    return this.request<any>(`/users/${userId}`, {
       method: 'PUT',
       body: data,
     })
   }
 
   async deleteUser(userId: string) {
-    return this.request<any>(`/api/users/${userId}`, {
+    return this.request<any>(`/users/${userId}`, {
       method: 'DELETE',
     })
   }
 
   // Session endpoints
   async createSession(data: Record<string, string>) {
-    return this.request<any>('/api/sessions', {
+    return this.request<any>('/sessions', {
       method: 'POST',
       body: data,
     })
   }
 
   async getSessions() {
-    return this.request<any>('/api/sessions')
+    return this.request<any>('/sessions')
   }
 
   // Attendance endpoints
   async submitAttendance(data: Record<string, string>) {
-    return this.request<any>('/api/attendance', {
+    return this.request<any>('/attendance', {
       method: 'POST',
       body: data,
     })
   }
 
   async getAttendanceHistory() {
-    return this.request<any>('/api/attendance/history')
+    return this.request<any>('/attendance/history')
   }
 
   // Report endpoints
   async getAttendanceReport(sessionId?: string) {
     const url = sessionId
-      ? `/api/reports/attendance?session_id=${sessionId}`
-      : '/api/reports/attendance'
+      ? `/reports/attendance?session_id=${sessionId}`
+      : '/reports/attendance'
     return this.request<any>(url)
   }
 }
