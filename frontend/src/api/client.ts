@@ -69,6 +69,13 @@ class APIClient {
     })
   }
 
+  async register(data: { name: string; email: string; username: string; password: string }) {
+    return this.request<any>('/api/auth/register', {
+      method: 'POST',
+      body: data,
+    })
+  }
+
   async getMe() {
     return this.request<any>('/api/auth/me')
   }
