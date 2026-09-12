@@ -1,7 +1,3 @@
-# Submission Evidence
-
-This folder records reproducible checks for the Student Attendance System. It does not contain fabricated screenshots or credentials.
-
 ## Verified in this workspace
 
 - Backend API suite: `python -m unittest discover -s tests -v`
