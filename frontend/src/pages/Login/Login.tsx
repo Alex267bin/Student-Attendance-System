@@ -98,6 +98,7 @@ export function LoginPage() {
 
           <div className={styles.helpText}>
             <p>Password recovery is not available yet. Please contact your administrator.</p>
+            <p><a href="/register">Create a student account</a></p>
           </div>
         </form>
       </div>
