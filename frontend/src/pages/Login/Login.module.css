@@ -1,0 +1,231 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #f4f6fb;
+  padding: 20px;
+}
+
+.formWrapper {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 460px;
+  padding: 42px 48px 46px;
+  border: 1px solid #e5e8f0;
+}
+
+.logo {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 18px;
+  display: grid;
+  place-items: center;
+  background: #5b4bc4;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.header h1 {
+  font-size: 24px;
+  color: #17213d;
+  margin-bottom: 9px;
+  font-size: 23px;
+  font-weight: 750;
+}
+
+.header p {
+  font-size: 14px;
+  color: #71809a;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.roleSelector {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.roleSelector label {
+  font-weight: 650;
+  color: #27324e;
+  font-size: 13px;
+}
+
+.roleTabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  background: #f0f2f7;
+  border: 1px solid #e2e5ee;
+  border-radius: 8px;
+}
+
+.roleTabs button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 6px;
+  color: #65708a;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.roleTabs button.activeRole {
+  color: #5542bf;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(39, 32, 84, .1);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formGroup label {
+  font-weight: 500;
+  color: #27324e;
+  font-size: 14px;
+}
+
+.formGroup input {
+  padding: 11px 13px;
+  border: 1px solid #dbe0ea;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.formGroup input:focus {
+  border-color: #6a58d3;
+  outline: none;
+}
+
+.formGroup input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.passwordInput {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.passwordInput input {
+  flex: 1;
+}
+
+.togglePassword {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #7a8499;
+  font-size: 11px;
+  padding: 7px;
+  position: absolute;
+  right: 8px;
+}
+
+.togglePassword:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.formOptions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.rememberMe {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #59657c;
+}
+
+.rememberMe input {
+  cursor: pointer;
+  accent-color: #5b4bc4;
+}
+
+.forgotPassword {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #5b4bc4;
+  font-size: 13px;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 12px;
+  background-color: #fff4f3;
+  color: #b64b4b;
+  border: 1px solid #f0b8b5;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.error span {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.submitBtn {
+  padding: 12px;
+  background-color: #5b4bc4;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background-color: #4939aa;
+}
+
+.submitBtn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .formWrapper {
+    padding: 32px 22px;
+  }
+
+  .header h1 {
+    font-size: 20px;
+  }
+}
